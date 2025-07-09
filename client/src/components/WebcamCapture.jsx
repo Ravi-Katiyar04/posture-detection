@@ -1,9 +1,8 @@
-// src/components/WebcamCapture.jsx
 import { useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { Pose } from '@mediapipe/pose';
 import { Camera } from '@mediapipe/camera_utils';
-import { checkPosture } from '../utils/checkPostureRules';
+import axios from 'axios';
 
 export default function WebcamCapture() {
   const webcamRef = useRef(null);
@@ -36,45 +35,48 @@ export default function WebcamCapture() {
         width: 640,
         height: 480,
       });
-
       camera.start();
     }
   }, []);
 
-  const onResults = (results) => {
-    const canvasElement = canvasRef.current;
-    const canvasCtx = canvasElement.getContext('2d');
+  const onResults = async (results) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
 
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasCtx.drawImage(
-      results.image,
-      0,
-      0,
-      canvasElement.width,
-      canvasElement.height
-    );
+    ctx.save();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
     if (results.poseLandmarks) {
-      drawLandmarks(canvasCtx, results.poseLandmarks);
+      drawLandmarks(ctx, results.poseLandmarks);
 
-      const postureWarnings = checkPosture(results.poseLandmarks);
-      canvasCtx.fillStyle = 'red';
-      canvasCtx.font = '16px Arial';
+      try {
+        const res = await axios.post('http://localhost:5000/api/pose/analyze', {
+          landmarks: results.poseLandmarks,
+        });
 
-      postureWarnings.forEach((msg, i) => {
-        canvasCtx.fillText(msg, 10, 20 + i * 20);
-      });
+        const { feedback } = res.data;
+
+        if (feedback && feedback.length > 0) {
+          ctx.fillStyle = 'red';
+          ctx.font = '16px Arial';
+          feedback.forEach((msg, idx) => {
+            ctx.fillText(msg, 10, 30 + idx * 20);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to analyze posture:', err.message);
+      }
     }
 
-    canvasCtx.restore();
+    ctx.restore();
   };
 
   const drawLandmarks = (ctx, landmarks) => {
-    ctx.fillStyle = 'lime';
-    landmarks.forEach((lm) => {
+    ctx.fillStyle = 'green';
+    landmarks.forEach((point) => {
       ctx.beginPath();
-      ctx.arc(lm.x * 640, lm.y * 480, 5, 0, 2 * Math.PI);
+      ctx.arc(point.x * 640, point.y * 480, 5, 0, 2 * Math.PI);
       ctx.fill();
     });
   };
@@ -93,5 +95,6 @@ export default function WebcamCapture() {
     </div>
   );
 }
+
 
 
