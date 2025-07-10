@@ -25,31 +25,35 @@ An AI-powered real-time posture detection and feedback system using **MediaPipe*
 - **Other:** [CORS](https://www.npmjs.com/package/cors), [Nodemon](https://nodemon.io/) (dev)
 
 ---
+
 ## 📦 Folder Structure
 
+```
 posture-detection/
-├── client/ # Frontend (React + Tailwind CSS)
-│ ├── src/
-│ │ ├── components/ # WebcamCapture, VideoUploader
-│ │ ├── pages/ # Home.jsx
-│ │ ├── utils/ # postureRules.js
-│ │ ├── App.jsx
-│ │ ├── main.jsx
-│ │ └── index.css
-│ ├── public/
-│ └── vite.config.js
+├── client/   # Frontend (React + Tailwind CSS)
+│   ├── src/
+│   │   ├── components/ # WebcamCapture, VideoUploader
+│   │   ├── pages/      # Home.jsx
+│   │   ├── utils/      # postureRules.js
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── public/
+│   └── vite.config.js
 │
-├── server/ # Backend (Express.js)
-│ ├── routes/
-│ │ └── uploadRoutes.js
-│ ├── processors/
-│ │ └── analyze_posture.py
-│ ├── uploads/ # Uploaded video files
-│ ├── app.js
-│ └── server.js
+├── server/   # Backend (Express.js)
+│   ├── routes/
+│   │   ├── uploadRoutes.js
+│   │   └── analyzeRoutes.js
+│   ├── processors/
+│   │   └── analyze_posture.py
+│   ├── uploads/        # Uploaded video files (create this folder manually)
+│   ├── app.js
+│   └── server.js
 │
 ├── README.md
 └── package.json
+```
 
 ---
 
@@ -64,38 +68,67 @@ cd posture-detection
 
 ### 2. Install dependencies
 
-#### For both client and server:
+#### For client
 
 ```sh
+cd client
+npm install
+```
+
+#### For server
+
+```sh
+cd ../server
 npm install
 ```
 
 ### 3. Configure environment variables
 
 - Create a `.env` file in the `server` directory.
-- Add your environment variables (e.g., `PORT=5000`).
+- Add your environment variables (e.g., `PORT=4000`).
 - For file uploads, set `UPLOAD_PATH=uploads`.
 
-### 4. Run the app
+### 4. Create uploads folder
+
+- **Important:** Manually create an `uploads` folder inside the `server` directory to store uploaded videos.
+
+```sh
+mkdir server/uploads
+```
+
+### 5. Run the app
 
 #### In one terminal, start the server:
 
 ```sh
 cd server
-nodemon server.js
+npm run dev
 ```
 
 #### In another terminal, start the client:
 
 ```sh
-cd client
+cd ../client
 npm run dev
 ```
 
-### 5. Access the app
+### 6. Access the app
 
-- Open your browser and go to `http://localhost:5173` (Vite default).
-- For the backend, use `http://localhost:5000` (or your configured port).
+- Open your browser and go to [http://localhost:5173](http://localhost:5173) (Vite default).
+- For the backend, use [http://localhost:4000](http://localhost:4000) (or your configured port).
+
+---
+
+## 🚀 Deploy
+
+
+---
+
+## 🎬 Demo Video
+
+[![Watch the demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
+
+[Click here to watch the demo video](https://youtu.be/YOUR_VIDEO_ID)
 
 ---
 
@@ -141,27 +174,3 @@ npm run dev
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Acknowledgments
-
-- Inspired by the need for better posture awareness and correction.
-- Leveraged MediaPipe's powerful pose detection capabilities.
-- Built with love and care by the developer community.
-
----
-
-## 📞 Contact
-
-For feedback, suggestions, or inquiries, please contact:
-
-- **Your Name** - [your.email@example.com](mailto:your.email@example.com)
-- **GitHub:** [your-username](https://github.com/your-username)
-
----
-
-Replace `YOUR_VIDEO_ID` and GitHub repo URL with your actual links.
