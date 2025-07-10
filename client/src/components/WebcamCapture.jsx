@@ -1,36 +1,37 @@
-import { useEffect, useRef } from 'react';
-import Webcam from 'react-webcam';
+import { useEffect, useRef, useState } from 'react';
 import { Pose } from '@mediapipe/pose';
-import { Camera } from '@mediapipe/camera_utils';
-import axios from 'axios';
+import * as cam from '@mediapipe/camera_utils';
+import { evaluatePosture } from '../utils/postureRules';
 
 export default function WebcamCapture() {
-  const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const [status, setStatus] = useState({ squatBad: false, sittingBad: false });
 
   useEffect(() => {
-    if (
-      typeof webcamRef.current !== 'undefined' &&
-      webcamRef.current !== null
-    ) {
-      const pose = new Pose({
-        locateFile: (file) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-      });
+    const pose = new Pose({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+    });
 
-      pose.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
 
-      pose.onResults(onResults);
+    pose.onResults((results) => {
+      const landmarks = results.poseLandmarks;
+      if (landmarks) {
+        const feedback = evaluatePosture(landmarks);
+        setStatus(feedback);
+      }
+    });
 
-      const camera = new Camera(webcamRef.current.video, {
+    if (videoRef.current) {
+      const camera = new cam.Camera(videoRef.current, {
         onFrame: async () => {
-          await pose.send({ image: webcamRef.current.video });
+          await pose.send({ image: videoRef.current });
         },
         width: 640,
         height: 480,
@@ -39,62 +40,47 @@ export default function WebcamCapture() {
     }
   }, []);
 
-  const onResults = async (results) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    ctx.save();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-    if (results.poseLandmarks) {
-      drawLandmarks(ctx, results.poseLandmarks);
-
-      try {
-        const res = await axios.post('http://localhost:5000/api/pose/analyze', {
-          landmarks: results.poseLandmarks,
-        });
-
-        const { feedback } = res.data;
-
-        if (feedback && feedback.length > 0) {
-          ctx.fillStyle = 'red';
-          ctx.font = '16px Arial';
-          feedback.forEach((msg, idx) => {
-            ctx.fillText(msg, 10, 30 + idx * 20);
-          });
-        }
-      } catch (err) {
-        console.error('Failed to analyze posture:', err.message);
-      }
-    }
-
-    ctx.restore();
-  };
-
-  const drawLandmarks = (ctx, landmarks) => {
-    ctx.fillStyle = 'green';
-    landmarks.forEach((point) => {
-      ctx.beginPath();
-      ctx.arc(point.x * 640, point.y * 480, 5, 0, 2 * Math.PI);
-      ctx.fill();
-    });
-  };
+  const isBadPosture = status.squatBad || status.sittingBad;
+  const borderColorClass = isBadPosture ? 'border-red-500' : 'border-green-500';
 
   return (
-    <div className="bg-white shadow-lg p-4 rounded w-full md:w-1/2 relative">
-      <h2 className="text-xl font-semibold mb-3">Webcam Pose Detection</h2>
-      <Webcam
-        ref={webcamRef}
-        style={{ display: 'none' }}
-        width={640}
-        height={480}
-        videoConstraints={{ facingMode: 'user' }}
+    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 w-full">
+      <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+        <i className="fas fa-camera text-green-500"></i>
+        Live Webcam Posture Monitor
+      </h2>
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className={`w-full rounded-lg border-4 ${borderColorClass}`}
       />
-      <canvas ref={canvasRef} width={640} height={480} className="rounded" />
+
+      <div className="mt-4 space-y-3">
+        {status.squatBad && (
+          <div className="p-3 bg-red-100 text-red-800 rounded-lg flex items-center gap-3 shadow-sm">
+            <i className="fas fa-running"></i>
+            <span>⚠️ Bad Squat Posture Detected</span>
+          </div>
+        )}
+
+        {status.sittingBad && (
+          <div className="p-3 bg-yellow-100 text-yellow-800 rounded-lg flex items-center gap-3 shadow-sm">
+            <i className="fas fa-chair"></i>
+            <span>⚠️ Sitting Posture Incorrect</span>
+          </div>
+        )}
+
+        {!status.squatBad && !status.sittingBad && (
+          <div className="p-3 bg-green-100 text-green-800 rounded-lg flex items-center gap-3 shadow-sm">
+            <i className="fas fa-smile-beam"></i>
+            <span>✅ Good Posture Maintained</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
 
 
