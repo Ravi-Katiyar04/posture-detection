@@ -8,7 +8,7 @@ export default function VideoUploader() {
   const [analysisMessage, setAnalysisMessage] = useState('');
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+ 
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -28,14 +28,14 @@ export default function VideoUploader() {
 
     try {
       setUploading(true);
-      const res = await fetch(`${API_URL}/api/analyze`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
 
       const data = await res.json();
       if (data.success) {
-        setUploadedUrl(`${API_URL}${data.filePath}`);
+        setUploadedUrl(`$${import.meta.env.VITE_API_URL}${data.filePath}`);
         setAnalysisMessage(data.analysis?.message || '');
         setError('');
       } else {
